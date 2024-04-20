@@ -43,6 +43,6 @@ It allows users to perform various actions such as signing up, logging in, check
 1. Clone this repository to your local machine.
 2. Navigate to the `frontend` directory and run `npm install` to install frontend dependencies.
 3. Navigate to the `backend` directory and run `npm install` to install backend dependencies.
-4. Start the backend server by running `npm start`.
-5. Start the frontend development server by running `npm start` in the frontend directory.
+4. Start the backend server by running `nodemon`.
+5. Start the frontend development server by running `npm run dev` in the frontend directory.
 6. Access the application in your browser at http://localhost:3000.
