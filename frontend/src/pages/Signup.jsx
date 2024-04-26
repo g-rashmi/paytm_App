@@ -14,7 +14,7 @@ export const Signup = () => {
   const [password, setPassword] = useState("");
 
   return (
-    <div className="bg-red-100 h-screen flex justify-center">
+    <div className="bg-slate-300 h-screen flex justify-center">
       <div className="flex flex-col justify-center">
         <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
           <Heading label={"Sign up"} />
@@ -23,14 +23,14 @@ export const Signup = () => {
             onChange={(e) => {
               setFirstName(e.target.value);
             }}
-            placeholder="shin"
+            placeholder="rashmi"
             label={"First Name"}
           />
           <InputBox
             onChange={(e) => {
               setLastName(e.target.value);
             }}
-            placeholder="chan"
+            placeholder="Gupta"
             label={"Last Name"}
           />
           <InputBox

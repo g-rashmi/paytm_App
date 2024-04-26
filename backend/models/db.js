@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://127.0.0.1:27017/paytm");
+mongoose
+  .connect("mongodb://127.0.0.1:27017/paytm")
+  .then(console.log("mongodb connected"));
 
 // Create a Schema for Users
 const userSchema = new mongoose.Schema({
