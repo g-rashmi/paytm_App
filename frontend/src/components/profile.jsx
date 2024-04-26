@@ -11,7 +11,12 @@ export const Profile = () => {
   const [lastName, setLastName] = useState(searchParams.get("lastname"));
   const email = searchParams.get("id");
   const [password, setPassword] = useState(searchParams.get("password"));
+  const Signout = async (e) => {
+    e.preventDefault();
+    localStorage.removeItem("token");
 
+    window.location.href = "/";
+  };
   const updateProfile = async (e) => {
     e.preventDefault();
     try {
@@ -102,10 +107,16 @@ export const Profile = () => {
           </div>
           <div className="mt-6">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
+              className="bg-blue-500 hover:bg-blue-700 mb-3 mr-3  text-white font-bold py-2 px-4 rounded w-full md:w-auto "
               onClick={updateProfile}
             >
               Save
+            </button>
+            <button
+              className="bg-gray-500 hover:bg-blue-700  text-white font-bold py-2 px-4 rounded w-full md:w-auto"
+              onClick={Signout}
+            >
+              Signout
             </button>
           </div>
         </div>
