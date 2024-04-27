@@ -1,8 +1,11 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
-mongoose.connect(process.env.URL).then(console.log("mongodb connected"));
-
+try {
+  mongoose.connect(process.env.URL).then(console.log("mongodb connected"));
+} catch (error) {
+  console.log(error);
+}
 // Create a Schema for Users
 const userSchema = new mongoose.Schema({
   username: {

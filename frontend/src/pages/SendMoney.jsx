@@ -1,12 +1,14 @@
 import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
+
 const token = localStorage.getItem("token");
 export const Send = () => {
   const [searchParams] = useSearchParams();
   const [amount, setAmount] = useState(0);
   const name = searchParams.get("name");
   const id = searchParams.get("id");
+
   const Transfer = async () => {
     try {
       const data = {
@@ -14,7 +16,7 @@ export const Send = () => {
         to: id,
       };
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:3000/api/v1/account/transfer",
         JSON.stringify(data),
         {
@@ -44,13 +46,7 @@ export const Send = () => {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  for="amount"
-                  onChange={(e) => {
-                    setAmount(e.target.value);
-                  }}
-                >
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Amount (in Rs)
                 </label>
                 <input
@@ -58,6 +54,9 @@ export const Send = () => {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   id="amount"
                   placeholder="Enter amount"
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                  }}
                 />
               </div>
               <button

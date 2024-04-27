@@ -43,7 +43,8 @@ export const Profile = () => {
           lastName +
           "&password=" +
           password
-      );
+      
+      )
     } catch (error) {
       alert(error);
     }
