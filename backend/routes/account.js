@@ -28,7 +28,7 @@ router.post("/transfer", authmiddleware, async (req, res) => {
   const account = await Account.findOne({ userId: req.userId }).session(
     session
   );
-
+  const to_id = to;
   if (!account || account.balance < amount) {
     await session.abortTransaction();
     return res.status(400).json({
@@ -42,7 +42,7 @@ router.post("/transfer", authmiddleware, async (req, res) => {
     await session.abortTransaction();
 
     return res.status(400).json({
-      message: "Invalid account",
+      message: to_id,
     });
   }
 

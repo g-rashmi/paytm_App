@@ -8,7 +8,7 @@ export const Send = () => {
   const [amount, setAmount] = useState(0);
   const name = searchParams.get("name");
   const id = searchParams.get("id");
-
+  console.log(id);
   const Transfer = async () => {
     try {
       const data = {
