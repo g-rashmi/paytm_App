@@ -1,24 +1,18 @@
 import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
-
 const token = localStorage.getItem("token");
 export const Send = () => {
   const [searchParams] = useSearchParams();
   const [amount, setAmount] = useState(0);
   const name = searchParams.get("name");
   const id = searchParams.get("id");
-  console.log(id);
+
   const Transfer = async () => {
     try {
-      const data = {
-        amount: amount,
-        to: id,
-      };
-
       await axios.post(
         "http://localhost:3000/api/v1/account/transfer",
-        JSON.stringify(data),
+        JSON.stringify({ to: id, amount: amount }),
         {
           headers: { Authorization: `Bearer ${token}` },
         }

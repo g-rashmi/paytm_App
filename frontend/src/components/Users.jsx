@@ -30,7 +30,7 @@ export const Users = ({ username }) => {
       <div>
         {users.map((user) => {
           if (user.username !== username) {
-            return <User key={user._id} user={user} />;
+            return <User user={user} />;
           }
           return null; // Don't render anything if the condition is not met
         })}
@@ -54,7 +54,7 @@ function User({ user }) {
 
       <div className="flex flex-col justify-center h-ful">
         <Button
-          onClick={(e) => {
+          onClick={() => {
             navigate("/send?id=" + user._id + "&name=" + user.firstName);
           }}
           label={"Send Money"}
