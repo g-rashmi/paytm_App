@@ -1,6 +1,7 @@
-const { JWT_SECRET } = require("../config.js");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+dotenv.config();
 const authmiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer")) {
@@ -8,7 +9,7 @@ const authmiddleware = (req, res, next) => {
   }
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (decoded.userId) {
       req.userId = decoded.userId;
       next();

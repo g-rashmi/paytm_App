@@ -2,6 +2,8 @@
 const express = require("express");
 const zod = require("zod");
 const router = express.Router();
+const dotenv = require("dotenv");
+dotenv.config();
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config");
 const { User } = require("../models/db");
@@ -54,7 +56,7 @@ router.post("/signup", async (req, res) => {
       {
         userId,
       },
-      JWT_SECRET
+      process.env.JWT_SECRET
     );
     return res.status(200).json({
       msg: "user created successfully",
@@ -104,7 +106,7 @@ router.post("/signin", async (req, res) => {
         {
           userId,
         },
-        JWT_SECRET
+        process.env.JWT_SECRET
       );
       res.json({
         firstname: firstname,
