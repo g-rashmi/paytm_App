@@ -5,7 +5,7 @@ import { Heading } from "../components/Heading";
 import { InputBox } from "../components/InputBox";
 import { SubHeading } from "../components/SubHeading";
 import axios from "axios";
-import {BACKEND_URL} from "../components/configg"
+import { BACKEND_URL } from "../components/configg";
 import { useNavigate } from "react-router";
 export const Signup = () => {
   const navigate = useNavigate();
@@ -71,7 +71,9 @@ export const Signup = () => {
                   );
 
                   localStorage.setItem("token", response.data.token);
+
                   alert("user created successfully");
+
                   navigate(
                     "/dashboard?name=" +
                       firstname +
