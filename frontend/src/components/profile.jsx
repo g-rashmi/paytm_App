@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import axios from "axios";
+import { BACKEND_URL } from "./configg";
 const token = localStorage.getItem("token");
 
 export const Profile = () => {
@@ -27,7 +28,7 @@ export const Profile = () => {
       };
       // Make a PUT request to update the profile
       const response = await axios.put(
-        "http://localhost:3000/api/v1/user/",
+        `${BACKEND_URL}/api/v1/user/`,
         JSON.stringify(data),
         {
           headers: { Authorization: `Bearer ${token}` },

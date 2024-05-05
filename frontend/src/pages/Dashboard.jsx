@@ -4,6 +4,7 @@ import { Balance } from "../components/Balance";
 import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
+import { BACKEND_URL } from "../components/configg";
 const token = localStorage.getItem("token");
 export const Dashboard = () => {
   const [searchParams] = useSearchParams();
@@ -13,7 +14,7 @@ export const Dashboard = () => {
   const password = searchParams.get("password");
   const [balance, setBalance] = useState(0);
   axios
-    .get("http://localhost:3000/api/v1/account/balance", {
+    .get(`${BACKEND_URL}/api/v1/account/balance`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
