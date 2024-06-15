@@ -6,7 +6,10 @@ import { InputBox } from "../components/InputBox";
 import { SubHeading } from "../components/SubHeading";
 import axios from "axios";
 import { BACKEND_URL } from "../components/configg";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export const Signup = () => {
   const navigate = useNavigate();
   const [firstname, setFirstName] = useState("");
@@ -16,10 +19,11 @@ export const Signup = () => {
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <div className="flex flex-col justify-center">
         <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
           <Heading label={"Sign up"} />
-          <SubHeading label={"Enter your infromation to create an account"} />
+          <SubHeading label={"Enter your information to create an account"} />
           <InputBox
             onChange={(e) => {
               setFirstName(e.target.value);
@@ -70,22 +74,17 @@ export const Signup = () => {
                     { headers }
                   );
 
-                  localStorage.setItem("token", response.data.token);
-
-                  alert("user created successfully");
-
-                  navigate(
-                    "/dashboard?name=" +
-                      firstname +
-                      "&id=" +
-                      email +
-                      "&lastname=" +
-                      lastname +
-                      "&password=" +
-                      password
-                  );
+                  if (response.data.success) {
+                    toast.success(response.data.msg);
+                    localStorage.setItem("token", response.data.token);
+                    navigate(
+                      `/dashboard?name=${firstname}&id=${email}&lastname=${lastname}&password=${password}`
+                    );
+                  } else {
+                    toast.error(response.data.msg);
+                  }
                 } catch (error) {
-                  alert(error);
+                  toast.error(error.message);
                   console.error("Error:", error);
                 }
               }}

@@ -21,7 +21,8 @@ router.post("/signup", async (req, res) => {
   const { success } = signupBody.safeParse(req.body);
   if (!success) {
     return res.status(411).json({
-      msg: "incorrect inputs/email already taken",
+      msg: "incorrect inputs",
+      "success": false
     });
   }
   const existingUser = await User.findOne({
@@ -30,7 +31,8 @@ router.post("/signup", async (req, res) => {
 
   if (existingUser) {
     return res.status(411).json({
-      msg: "Email already taken/Incorrect inputs",
+      msg: "Email already taken",
+      "success": false,
     });
   }
   try {
@@ -60,6 +62,7 @@ router.post("/signup", async (req, res) => {
     );
     return res.status(200).json({
       msg: "user created successfully",
+      "success": true,
       token: token,
     });
   } catch (error) {
@@ -76,7 +79,8 @@ router.post("/signin", async (req, res) => {
   const { success } = signinbody.safeParse(req.body);
   if (!success) {
     return res.status(411).json({
-      msg: "input data wrong/user not found ",
+      msg: "input data wrong",
+      "success": false,
     });
   }
   const existingUser = await User.findOne({
@@ -84,7 +88,8 @@ router.post("/signin", async (req, res) => {
   });
   if (!existingUser) {
     return res.status(411).json({
-      msg: "input data is wrong/user not found ",
+      msg: "user not found ",
+      "success": false,
     });
   }
   const salt = existingUser.salt;
@@ -93,7 +98,8 @@ router.post("/signin", async (req, res) => {
     .toString("hex");
   if (hpassword !== existingUser.password) {
     return res.status(411).json({
-      msg: "input data is wrong/user not found ",
+      msg: "Incorrect-Password",
+      "success": false,
     });
   }
 
@@ -112,7 +118,9 @@ router.post("/signin", async (req, res) => {
         firstname: firstname,
         token: token,
         lastname: lastname,
-        password: password,
+        password: password, 
+        msg:"login done!",
+        "success": true
       });
       return;
     }
@@ -121,6 +129,7 @@ router.post("/signin", async (req, res) => {
   }
   return res.status(411).json({
     msg: "user not exist",
+    "success": false
   });
 });
 
