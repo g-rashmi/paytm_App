@@ -4,12 +4,12 @@ const router = express.Router();
 const dotenv = require("dotenv");
 dotenv.config();
 const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../config");
 const { User } = require("../models/db");
 const { Account } = require("../models/db");
 const crypto = require("crypto");
 const { authmiddleware } = require("../middleware/auth");
 
-// Validation schema using Zod
 const signupBody = zod.object({
   username: zod.string().email(),
   firstName: zod.string(),
@@ -17,38 +17,32 @@ const signupBody = zod.object({
   password: zod.string(),
 });
 
-// Signup endpoint
 router.post("/signup", async (req, res) => {
-  const { success, data } = signupBody.safeParse(req.body);
+  const { success } = signupBody.safeParse(req.body);
   if (!success) {
     return res.status(400).json({
-      success: false,
-      msg: "Invalid input data. Please provide valid email, first name, last name, and password.",
+      msg: "Incorrect inputs or email already taken",
     });
   }
 
-  const existingUser = await User.findOne({
-    username: data.username,
-  });
-
+  const existingUser = await User.findOne({ username: req.body.username });
   if (existingUser) {
-    return res.status(409).json({
-      success: false,
-      msg: "Email already taken. Please use a different email address.",
+    return res.status(400).json({
+      msg: "Email already taken",
     });
   }
 
   try {
     const salt = crypto.randomBytes(16).toString("hex");
-    const hpassword = crypto
-      .pbkdf2Sync(data.password, salt, 1000, 64, "sha512")
+    const hashedPassword = crypto
+      .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
       .toString("hex");
 
     const user = await User.create({
-      username: data.username,
-      password: hpassword,
-      firstName: data.firstName,
-      lastName: data.lastName,
+      username: req.body.username,
+      password: hashedPassword,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
       salt: salt,
     });
 
@@ -60,89 +54,75 @@ router.post("/signup", async (req, res) => {
     });
 
     const token = jwt.sign(
-      {
-        userId,
-      },
+      { userId },
       process.env.JWT_SECRET
     );
 
-    return res.status(201).json({
-      success: true,
+    return res.status(200).json({
       msg: "User created successfully",
       token: token,
     });
   } catch (error) {
-    console.error("Error in signup:", error);
+    console.error(error);
     return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
+      msg: "Server error",
     });
   }
 });
 
-// Validation schema for signin
 const signinBody = zod.object({
   username: zod.string().email(),
   password: zod.string(),
 });
 
-// Signin endpoint
 router.post("/signin", async (req, res) => {
-  const { success, data } = signinBody.safeParse(req.body);
+  const { success } = signinBody.safeParse(req.body);
   if (!success) {
     return res.status(400).json({
-      success: false,
-      msg: "Invalid input data!"
-    });
-  }
-
-  const existingUser = await User.findOne({
-    username: data.username,
-  });
-
-  if (!existingUser) {
-    return res.status(404).json({
-      success: false,
-      msg: "User not found!",
-    });
-  }
-
-  const salt = existingUser.salt;
-  const hpassword = crypto
-    .pbkdf2Sync(data.password, salt, 1000, 64, "sha512")
-    .toString("hex");
-
-  if (hpassword !== existingUser.password) {
-    return res.status(401).json({
-      success: false,
-      msg: "Incorrect password!",
+      msg: "Incorrect input data",
     });
   }
 
   try {
-    const userId = existingUser._id;
+    const existingUser = await User.findOne({ username: req.body.username });
+    if (!existingUser) {
+      return res.status(400).json({
+        msg: "User not found",
+      });
+    }
+
+    const salt = existingUser.salt;
+    const hashedPassword = crypto
+      .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
+      .toString("hex");
+
+    if (hashedPassword !== existingUser.password) {
+      return res.status(400).json({
+        msg: "Incorrect password",
+      });
+    }
+
+    const { firstName, lastName, _id: userId } = existingUser;
+
     const token = jwt.sign(
-      {
-        userId,
-      },
+      { userId },
       process.env.JWT_SECRET
     );
 
-    return res.status(200).json({
-      success: true,
-      msg: "Login successful.",
+    res.json({
+      firstname: firstName,
+      lastname: lastName,
       token: token,
     });
+
   } catch (error) {
-    console.error("Error in signin:", error);
+    console.error(error);
     return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
+      msg: "Server error",
     });
   }
 });
 
-// Update user endpoint
 const updateBody = zod.object({
   password: zod.string().optional(),
   firstName: zod.string().optional(),
@@ -150,67 +130,49 @@ const updateBody = zod.object({
 });
 
 router.put("/", authmiddleware, async (req, res) => {
-  const { success, data } = updateBody.safeParse(req.body);
+  const { success } = updateBody.safeParse(req.body);
   if (!success) {
     return res.status(400).json({
-      success: false,
-      msg: "Invalid input data",
+      message: "Error while updating information",
     });
   }
 
   try {
-    await User.updateOne({ _id: req.userId }, data);
-
-    return res.status(200).json({
-      success: true,
-      msg: "Profile updated successfully.",
+    await User.updateOne({ _id: req.userId }, req.body);
+    return res.json({
+      message: "Updated successfully",
     });
   } catch (error) {
-    console.error("Error in update:", error);
+    console.error(error);
     return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
+      msg: "Server error",
     });
   }
 });
 
-// Bulk user search endpoint
 router.get("/bulk", async (req, res) => {
   const filter = req.query.filter || "";
-
   try {
     const users = await User.find({
       $or: [
-        {
-          firstName: {
-            $regex: filter,
-            $options: "i", // Case insensitive search
-          },
-        },
-        {
-          lastName: {
-            $regex: filter,
-            $options: "i", // Case insensitive search
-          },
-        },
+        { firstName: { $regex: filter, $options: "i" } },
+        { lastName: { $regex: filter, $options: "i" } },
       ],
     });
 
-    return res.status(200).json({
-      success: true,
-      msg: "Users retrieved successfully.",
-      users: users.map((user) => ({
+    return res.json({
+      users: users.map(user => ({
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
         _id: user._id,
       })),
     });
+
   } catch (error) {
-    console.error("Error in bulk search:", error);
+    console.error(error);
     return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
+      msg: "Server error",
     });
   }
 });

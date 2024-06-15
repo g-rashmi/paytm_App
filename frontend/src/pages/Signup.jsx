@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { BottomWarning } from "../components/BottomWarning";
 import { Button } from "../components/Button";
 import { Heading } from "../components/Heading";
@@ -6,116 +6,91 @@ import { InputBox } from "../components/InputBox";
 import { SubHeading } from "../components/SubHeading";
 import axios from "axios";
 import { BACKEND_URL } from "../components/configg";
-import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
+import { useNavigate } from "react-router";
 export const Signup = () => {
   const navigate = useNavigate();
   const [firstname, setFirstName] = useState("");
   const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
-
-  const isValidEmail = (email) => {
-    // Simple email regex for demonstration; adjust as needed
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  };
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-
-    if (!firstname || !lastname || !email || !password) {
-      toast.error("All fields are required");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setEmailError("Invalid email address");
-      return;
-    }
-
-    const data = {
-      username: email,
-      firstName: firstname,
-      lastName: lastname,
-      password: password,
-    };
-
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/user/signup`,
-        JSON.stringify(data),
-        { headers }
-      );
-
-      if (response.data.success) {
-        toast.success("User registered successfully");
-        localStorage.setItem("token", response.data.token);
-        navigate(
-          `/dashboard?name=${firstname}&id=${email}&lastname=${lastname}&password=${password}`
-        );
-      } else {
-        toast.error(response.msg); // Use response.msg for error message
-      }
-    } catch (error) {
-      toast.error(response.msg);
-      console.error("Error:", error);
-    }
-  };
-
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    if (emailError && isValidEmail(e.target.value)) {
-      setEmailError("");
-    }
-  };
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <div className="flex flex-col justify-center">
         <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
           <Heading label={"Sign up"} />
-          <SubHeading label={"Enter your information to create an account"} />
+          <SubHeading label={"Enter your infromation to create an account"} />
           <InputBox
-            onChange={(e) => setFirstName(e.target.value)}
-            value={firstname}
-            placeholder="Enter your first name"
+            onChange={(e) => {
+              setFirstName(e.target.value);
+            }}
+            placeholder="rashmi"
             label={"First Name"}
-            required
           />
           <InputBox
-            onChange={(e) => setLastName(e.target.value)}
-            value={lastname}
-            placeholder="Enter your last name"
+            onChange={(e) => {
+              setLastName(e.target.value);
+            }}
+            placeholder="Gupta"
             label={"Last Name"}
-            required
           />
           <InputBox
-            onChange={handleEmailChange}
-            value={email}
-            placeholder="Enter your email"
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            placeholder="rashmi@gmail.com"
             label={"Email"}
-            required
-            errorMessage={emailError}
           />
           <InputBox
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            value={password}
-            placeholder="Enter your password"
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
+            placeholder="123456"
             label={"Password"}
-            required
           />
           <div className="pt-4">
-            <Button onClick={handleSignup} label={"Sign up"} />
+            <Button
+              onClick={async (e) => {
+                e.preventDefault();
+                const data = {
+                  username: email,
+                  firstName: firstname,
+                  lastName: lastname,
+                  password: password,
+                };
+
+                const headers = {
+                  "Content-Type": "application/json",
+                };
+
+                try {
+                  const response = await axios.post(
+                    `${BACKEND_URL}/api/v1/user/signup`,
+                    JSON.stringify(data),
+                    { headers }
+                  );
+
+                  localStorage.setItem("token", response.data.token);
+
+                  alert("user created successfully");
+
+                  navigate(
+                    "/dashboard?name=" +
+                      firstname +
+                      "&id=" +
+                      email +
+                      "&lastname=" +
+                      lastname +
+                      "&password=" +
+                      password
+                  );
+                } catch (error) {
+                  alert(error);
+                  console.error("Error:", error);
+                }
+              }}
+              label={"Sign up"}
+            />
           </div>
           <BottomWarning
             label={"Already have an account?"}
