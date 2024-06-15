@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { BottomWarning } from "../components/BottomWarning";
 import { Button } from "../components/Button";
 import { Heading } from "../components/Heading";
@@ -16,6 +16,66 @@ export const Signup = () => {
   const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const isValidEmail = (email) => {
+    // Simple email regex for demonstration; adjust as needed
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+
+    if (!firstname || !lastname || !email || !password) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setEmailError("Invalid email address");
+      return;
+    }
+
+    const data = {
+      username: email,
+      firstName: firstname,
+      lastName: lastname,
+      password: password,
+    };
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/user/signup`,
+        JSON.stringify(data),
+        { headers }
+      );
+
+      if (response.data.success) {
+        toast.success("User registered successfully");
+        localStorage.setItem("token", response.data.token);
+        navigate(
+          `/dashboard?name=${firstname}&id=${email}&lastname=${lastname}&password=${password}`
+        );
+      } else {
+        toast.error(response.msg); // Use response.msg for error message
+      }
+    } catch (error) {
+      toast.error(response.msg);
+      console.error("Error:", error);
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (emailError && isValidEmail(e.target.value)) {
+      setEmailError("");
+    }
+  };
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
@@ -25,71 +85,37 @@ export const Signup = () => {
           <Heading label={"Sign up"} />
           <SubHeading label={"Enter your information to create an account"} />
           <InputBox
-            onChange={(e) => {
-              setFirstName(e.target.value);
-            }}
-            placeholder="rashmi"
+            onChange={(e) => setFirstName(e.target.value)}
+            value={firstname}
+            placeholder="Enter your first name"
             label={"First Name"}
+            required
           />
           <InputBox
-            onChange={(e) => {
-              setLastName(e.target.value);
-            }}
-            placeholder="Gupta"
+            onChange={(e) => setLastName(e.target.value)}
+            value={lastname}
+            placeholder="Enter your last name"
             label={"Last Name"}
+            required
           />
           <InputBox
-            onChange={(e) => {
-              setEmail(e.target.value);
-            }}
-            placeholder="rashmi@gmail.com"
+            onChange={handleEmailChange}
+            value={email}
+            placeholder="Enter your email"
             label={"Email"}
+            required
+            errorMessage={emailError}
           />
           <InputBox
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
-            placeholder="123456"
+            type="password"
+            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            placeholder="Enter your password"
             label={"Password"}
+            required
           />
           <div className="pt-4">
-            <Button
-              onClick={async (e) => {
-                e.preventDefault();
-                const data = {
-                  username: email,
-                  firstName: firstname,
-                  lastName: lastname,
-                  password: password,
-                };
-
-                const headers = {
-                  "Content-Type": "application/json",
-                };
-
-                try {
-                  const response = await axios.post(
-                    `${BACKEND_URL}/api/v1/user/signup`,
-                    JSON.stringify(data),
-                    { headers }
-                  );
-
-                  if (response.data.success) {
-                    toast.success(response.data.msg);
-                    localStorage.setItem("token", response.data.token);
-                    navigate(
-                      `/dashboard?name=${firstname}&id=${email}&lastname=${lastname}&password=${password}`
-                    );
-                  } else {
-                    toast.error(response.data.msg);
-                  }
-                } catch (error) {
-                  toast.error(error.message);
-                  console.error("Error:", error);
-                }
-              }}
-              label={"Sign up"}
-            />
+            <Button onClick={handleSignup} label={"Sign up"} />
           </div>
           <BottomWarning
             label={"Already have an account?"}

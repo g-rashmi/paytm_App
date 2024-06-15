@@ -1,52 +1,57 @@
-// backend/routes/user.js
 const express = require("express");
 const zod = require("zod");
 const router = express.Router();
 const dotenv = require("dotenv");
 dotenv.config();
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET } = require("../config");
 const { User } = require("../models/db");
 const { Account } = require("../models/db");
 const crypto = require("crypto");
 const { authmiddleware } = require("../middleware/auth");
 
+// Validation schema using Zod
 const signupBody = zod.object({
   username: zod.string().email(),
   firstName: zod.string(),
   lastName: zod.string(),
   password: zod.string(),
 });
+
+// Signup endpoint
 router.post("/signup", async (req, res) => {
-  const { success } = signupBody.safeParse(req.body);
+  const { success, data } = signupBody.safeParse(req.body);
   if (!success) {
-    return res.status(411).json({
-      msg: "incorrect inputs",
-      "success": false
+    return res.status(400).json({
+      success: false,
+      msg: "Invalid input data. Please provide valid email, first name, last name, and password.",
     });
   }
+
   const existingUser = await User.findOne({
-    username: req.body.username,
+    username: data.username,
   });
 
   if (existingUser) {
-    return res.status(411).json({
-      msg: "Email already taken",
-      "success": false,
+    return res.status(409).json({
+      success: false,
+      msg: "Email already taken. Please use a different email address.",
     });
   }
+
   try {
     const salt = crypto.randomBytes(16).toString("hex");
     const hpassword = crypto
-      .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
+      .pbkdf2Sync(data.password, salt, 1000, 64, "sha512")
       .toString("hex");
+
     const user = await User.create({
-      username: req.body.username,
+      username: data.username,
       password: hpassword,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
+      firstName: data.firstName,
+      lastName: data.lastName,
       salt: salt,
     });
+
     const userId = user._id;
 
     await Account.create({
@@ -60,129 +65,154 @@ router.post("/signup", async (req, res) => {
       },
       process.env.JWT_SECRET
     );
-    return res.status(200).json({
-      msg: "user created successfully",
-      "success": true,
+
+    return res.status(201).json({
+      success: true,
+      msg: "User created successfully",
       token: token,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error in signup:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+    });
   }
 });
 
-const signinbody = zod.object({
+// Validation schema for signin
+const signinBody = zod.object({
   username: zod.string().email(),
   password: zod.string(),
 });
 
+// Signin endpoint
 router.post("/signin", async (req, res) => {
-  const { success } = signinbody.safeParse(req.body);
+  const { success, data } = signinBody.safeParse(req.body);
   if (!success) {
-    return res.status(411).json({
-      msg: "input data wrong",
-      "success": false,
+    return res.status(400).json({
+      success: false,
+      msg: "Invalid input data!"
     });
   }
+
   const existingUser = await User.findOne({
-    username: req.body.username,
+    username: data.username,
   });
+
   if (!existingUser) {
-    return res.status(411).json({
-      msg: "user not found ",
-      "success": false,
+    return res.status(404).json({
+      success: false,
+      msg: "User not found!",
     });
   }
+
   const salt = existingUser.salt;
   const hpassword = crypto
-    .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
+    .pbkdf2Sync(data.password, salt, 1000, 64, "sha512")
     .toString("hex");
+
   if (hpassword !== existingUser.password) {
-    return res.status(411).json({
-      msg: "Incorrect-Password",
-      "success": false,
+    return res.status(401).json({
+      success: false,
+      msg: "Incorrect password!",
     });
   }
 
   try {
-    const firstname = existingUser.firstName;
-    const lastname = existingUser.lastName;
     const userId = existingUser._id;
-    if (existingUser) {
-      const token = jwt.sign(
-        {
-          userId,
-        },
-        process.env.JWT_SECRET
-      );
-      res.json({
-        firstname: firstname,
-        token: token,
-        lastname: lastname,
-        password: password, 
-        msg:"login done!",
-        "success": true
-      });
-      return;
-    }
+    const token = jwt.sign(
+      {
+        userId,
+      },
+      process.env.JWT_SECRET
+    );
+
+    return res.status(200).json({
+      success: true,
+      msg: "Login successful.",
+      token: token,
+    });
   } catch (error) {
-    console.log(error);
+    console.error("Error in signin:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+    });
   }
-  return res.status(411).json({
-    msg: "user not exist",
-    "success": false
-  });
 });
 
+// Update user endpoint
 const updateBody = zod.object({
   password: zod.string().optional(),
   firstName: zod.string().optional(),
   lastName: zod.string().optional(),
 });
+
 router.put("/", authmiddleware, async (req, res) => {
-  const { success } = updateBody.safeParse(req.body);
+  const { success, data } = updateBody.safeParse(req.body);
   if (!success) {
-    res.status(411).json({
-      message: "Error while updating information",
+    return res.status(400).json({
+      success: false,
+      msg: "Invalid input data",
     });
   }
-  try {
-    await User.updateOne({ _id: req.userId }, req.body);
 
-    return res.json({
-      message: "Updated successfully",
+  try {
+    await User.updateOne({ _id: req.userId }, data);
+
+    return res.status(200).json({
+      success: true,
+      msg: "Profile updated successfully.",
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error in update:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+    });
   }
 });
 
+// Bulk user search endpoint
 router.get("/bulk", async (req, res) => {
-  // ? filter="jjj" ;
   const filter = req.query.filter || "";
 
-  const users = await User.find({
-    $or: [
-      {
-        firstName: {
-          $regex: filter,
+  try {
+    const users = await User.find({
+      $or: [
+        {
+          firstName: {
+            $regex: filter,
+            $options: "i", // Case insensitive search
+          },
         },
-      },
-      {
-        lastName: {
-          $regex: filter,
+        {
+          lastName: {
+            $regex: filter,
+            $options: "i", // Case insensitive search
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
-  return res.json({
-    user: users.map((user) => ({
-      username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      _id: user._id,
-    })),
-  });
+    return res.status(200).json({
+      success: true,
+      msg: "Users retrieved successfully.",
+      users: users.map((user) => ({
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        _id: user._id,
+      })),
+    });
+  } catch (error) {
+    console.error("Error in bulk search:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+    });
+  }
 });
 
 module.exports = router;
