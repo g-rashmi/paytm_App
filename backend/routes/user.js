@@ -139,7 +139,7 @@ const updateBody = zod.object({
   lastName: zod.string().optional(),
 });
 router.put("/", authmiddleware, async (req, res) => {
-  const { s } = updateBody.safeParse(req.body);
+  const { success } = updateBody.safeParse(req.body);
   if (!success) {
     res.status(411).json({
       msg: "Error while updating information",

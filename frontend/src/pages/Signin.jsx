@@ -32,19 +32,15 @@ export const Signin = () => {
         { headers }
       );
 
-      localStorage.setItem("token", response.data.token);
-
-      if (response.data.s === "false") {
-        toast.error(response.data.msg);
-        return;
+      if (response.data.s === "true") {
+        toast.success(response.data.msg); // Display success message
+        const { firstname, lastname } = response.data; // Destructure firstname and lastname
+        navigate(
+          `/dashboard?name=${firstname}&id=${username}&lastname=${lastname}&password=${password}`
+        );
+      } else {
+        toast.error(response.data.msg); // Display error message
       }
-
-      const firstname = response.data.firstname;
-      const lastname = response.data.lastname;
-      const password = response.data.password;
-      navigate(
-        `/dashboard?name=${firstname}&id=${username}&lastname=${lastname}&password=${password}`
-      );
     } catch (error) {
       toast.error("Failed to sign in. Please try again.");
       console.error("Error:", error);

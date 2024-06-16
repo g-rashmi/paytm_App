@@ -54,12 +54,15 @@ export const Signup = () => {
         { headers }
       );
 
-      localStorage.setItem("token", response.data.token);
-      toast.success("User created successfully");
-
-      navigate(
+      localStorage.setItem("token", response.data.token); 
+      if(response.data.s==="true")
+    {  toast.success("User created successfully");
+ navigate(
         `/dashboard?name=${firstname}&id=${email}&lastname=${lastname}&password=${password}`
-      );
+      );}
+      else{
+        toast.error(response.data.msg) ;
+      }
     } catch (error) {
       toast.error("Failed to create user");
       console.error("Error:", error);
