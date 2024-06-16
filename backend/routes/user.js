@@ -1,3 +1,4 @@
+// backend/routes/user.js
 const express = require("express");
 const zod = require("zod");
 const router = express.Router();
@@ -16,36 +17,36 @@ const signupBody = zod.object({
   lastName: zod.string(),
   password: zod.string(),
 });
-
 router.post("/signup", async (req, res) => {
   const { success } = signupBody.safeParse(req.body);
   if (!success) {
-    return res.status(400).json({
-      msg: "Incorrect inputs or email already taken",
+    return res.status(411).json({
+      msg: "incorrect inputs",
+      s: "false",
     });
   }
+  const existingUser = await User.findOne({
+    username: req.body.username,
+  });
 
-  const existingUser = await User.findOne({ username: req.body.username });
   if (existingUser) {
-    return res.status(400).json({
+    return res.status(411).json({
       msg: "Email already taken",
+      s: "false",
     });
   }
-
   try {
     const salt = crypto.randomBytes(16).toString("hex");
-    const hashedPassword = crypto
+    const hpassword = crypto
       .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
       .toString("hex");
-
     const user = await User.create({
       username: req.body.username,
-      password: hashedPassword,
+      password: hpassword,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       salt: salt,
     });
-
     const userId = user._id;
 
     await Account.create({
@@ -54,73 +55,82 @@ router.post("/signup", async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId },
-      process.env.JWT_SECRET
+      {
+        userId,
+      },
+      JWT_SECRET
     );
-
     return res.status(200).json({
-      msg: "User created successfully",
+      msg: "user createdsfully",
+      s: "true",
       token: token,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      msg: "Server error",
-    });
+    return res.json({ s: "false", msg: error });
   }
 });
 
-const signinBody = zod.object({
+const signinbody = zod.object({
   username: zod.string().email(),
   password: zod.string(),
 });
 
 router.post("/signin", async (req, res) => {
-  const { success } = signinBody.safeParse(req.body);
+  const { s } = signinbody.safeParse(req.body);
   if (!success) {
-    return res.status(400).json({
-      msg: "Incorrect input data",
+    return res.status(411).json({
+      msg: "input data wrong",
+      s: "false",
+    });
+  }
+  const existingUser = await User.findOne({
+    username: req.body.username,
+  });
+  if (!existingUser) {
+    return res.status(411).json({
+      msg: "user not found ",
+      s: "false",
+    });
+  }
+  const salt = existingUser.salt;
+  const hpassword = crypto
+    .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
+    .toString("hex");
+  if (hpassword !== existingUser.password) {
+    return res.status(411).json({
+      msg: "wrong password ",
+      s: "false",
     });
   }
 
   try {
-    const existingUser = await User.findOne({ username: req.body.username });
-    if (!existingUser) {
-      return res.status(400).json({
-        msg: "User not found",
+    const firstname = existingUser.firstName;
+    const lastname = existingUser.lastName;
+    const userId = existingUser._id;
+    if (existingUser) {
+      const token = jwt.sign(
+        {
+          userId,
+        },
+        JWT_SECRET
+      );
+      return res.json({
+        firstname: firstname,
+        token: token,
+        lastname: lastname,
+        password: password,
+        msg: "user login done",
+        s: "true",
       });
+      return;
     }
-
-    const salt = existingUser.salt;
-    const hashedPassword = crypto
-      .pbkdf2Sync(req.body.password, salt, 1000, 64, "sha512")
-      .toString("hex");
-
-    if (hashedPassword !== existingUser.password) {
-      return res.status(400).json({
-        msg: "Incorrect password",
-      });
-    }
-
-    const { firstName, lastName, _id: userId } = existingUser;
-
-    const token = jwt.sign(
-      { userId },
-      process.env.JWT_SECRET
-    );
-
-    res.json({
-      firstname: firstName,
-      lastname: lastName,
-      token: token,
-    });
-
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      msg: "Server error",
-    });
+    return res.json({ success: true, msg: error });
   }
+  return res.status(411).json({
+    msg: "Retry login failed",
+    s: "false",
+  });
 });
 
 const updateBody = zod.object({
@@ -128,53 +138,54 @@ const updateBody = zod.object({
   firstName: zod.string().optional(),
   lastName: zod.string().optional(),
 });
-
 router.put("/", authmiddleware, async (req, res) => {
-  const { success } = updateBody.safeParse(req.body);
+  const { s } = updateBody.safeParse(req.body);
   if (!success) {
-    return res.status(400).json({
-      message: "Error while updating information",
+    res.status(411).json({
+      msg: "Error while updating information",
+      s: "false",
     });
   }
-
   try {
     await User.updateOne({ _id: req.userId }, req.body);
+
     return res.json({
-      message: "Updated successfully",
+      msg: "Updatedsfully",
+
+      s: "true",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      msg: "Server error",
-    });
+    return res.json({ success: false, msg: error });
   }
 });
 
 router.get("/bulk", async (req, res) => {
+  // ? filter="jjj" ;
   const filter = req.query.filter || "";
-  try {
-    const users = await User.find({
-      $or: [
-        { firstName: { $regex: filter, $options: "i" } },
-        { lastName: { $regex: filter, $options: "i" } },
-      ],
-    });
 
-    return res.json({
-      users: users.map(user => ({
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        _id: user._id,
-      })),
-    });
+  const users = await User.find({
+    $or: [
+      {
+        firstName: {
+          $regex: filter,
+        },
+      },
+      {
+        lastName: {
+          $regex: filter,
+        },
+      },
+    ],
+  });
 
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      msg: "Server error",
-    });
-  }
+  return res.json({
+    user: users.map((user) => ({
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      _id: user._id,
+    })),
+  });
 });
 
 module.exports = router;
